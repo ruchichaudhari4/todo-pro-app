@@ -1,94 +1,103 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 
-const API = "http://localhost:5000/api/tasks";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [search, setSearch] = useState("");
-  const [priority, setPriority] = useState("Medium");
-  const [dark, setDark] = useState(true);
+  const [priority, setPriority] = useState("low");
+  const [dueDate, setDueDate] = useState("");
+  const [editId, setEditId] = useState(null);
+
+  const API = "http://localhost:5000/api/tasks";
+
+  const fetchTasks = async () => {
+    const res = await axios.get(API);
+    setTasks(res.data);
+  };
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  const fetchTasks = async () => {
-    try {
-      const res = await axios.get(API);
-      setTasks(res.data);
-    } catch (err) {
-      console.log(err);
+  // ADD / UPDATE
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      toast.error("Task cannot be empty ❌");
+      return;
     }
+
+    if (editId) {
+      const oldTask = tasks.find((t) => t._id === editId);
+
+      await axios.put(`${API}/${editId}`, {
+        title,
+        priority,
+        dueDate,
+        completed: oldTask.completed,
+      });
+
+      toast.success("Task Updated ✏️");
+      setEditId(null);
+    } else {
+      await axios.post(API, {
+        title,
+        priority,
+        dueDate,
+      });
+
+      toast.success("Task Added ✅");
+    }
+
+    setTitle("");
+    setPriority("low");
+    setDueDate("");
+
+    fetchTasks();
   };
 
-  const addTask = async () => {
-    if (!title) return;
-
-    try {
-      await axios.post(API, { title, priority });
-      setTitle("");
-      fetchTasks();
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
+  // DELETE
   const deleteTask = async (id) => {
-    try {
-      await axios.delete(`${API}/${id}`);
-      fetchTasks();
-    } catch (err) {
-      console.log(err);
-    }
+    await axios.delete(`${API}/${id}`);
+    toast.info("Task Deleted 🗑️");
+    fetchTasks();
   };
 
+  // TOGGLE
   const toggleTask = async (task) => {
-    try {
-      await axios.put(`${API}/${task._id}`, {
-        completed: !task.completed,
-      });
-      fetchTasks();
-    } catch (err) {
-      console.log(err);
-    }
+    await axios.put(`${API}/${task._id}`, {
+      ...task,
+      completed: !task.completed,
+    });
+
+    toast("Task status changed 🔄");
+    fetchTasks();
   };
 
-  const editTask = async (task) => {
-    const newTitle = prompt("Edit task:", task.title);
-    if (!newTitle) return;
-
-    try {
-      await axios.put(`${API}/${task._id}`, {
-        title: newTitle,
-      });
-      fetchTasks();
-    } catch (err) {
-      console.log(err);
-    }
+  // EDIT
+  const handleEdit = (task) => {
+    setTitle(task.title);
+    setPriority(task.priority);
+    setDueDate(task.dueDate ? task.dueDate.split("T")[0] : "");
+    setEditId(task._id);
   };
 
   const filtered = tasks.filter((t) =>
-    (t.title || "").toLowerCase().includes(search.toLowerCase())
+    t.title?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className={dark ? "app dark" : "app"}>
-      <div className="container">
+    <div className="container">
+      <div className="card">
+        <h1>🚀 Todo Pro</h1>
 
-        {/* HEADER */}
-        <div className="header">
-          <h1>🚀 Todo Pro</h1>
-          <button onClick={() => setDark(!dark)} className="theme-btn">
-            {dark ? "☀️" : "🌙"}
-          </button>
-        </div>
-
-        {/* INPUT */}
-        <div className="input-section">
+        <div className="inputBox">
           <input
+            type="text"
             placeholder="Enter task..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -98,53 +107,78 @@ function App() {
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
           >
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
           </select>
 
-          <button onClick={addTask}>Add</button>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+
+          <button onClick={handleSubmit}>
+            {editId ? "Update" : "Add"}
+          </button>
         </div>
 
-        {/* SEARCH */}
         <input
           className="search"
-          placeholder="Search task..."
+          placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* STATS */}
-        <div className="stats">
-          Total: {tasks.length} | Completed:{" "}
-          {tasks.filter((t) => t.completed).length}
-        </div>
+        <p>Total: {filtered.length}</p>
 
-        {/* TASK LIST */}
-        <div className="tasks">
-          {filtered.map((t) => (
-            <div key={t._id} className="task">
-              <div className="left">
-                <input
-                  type="checkbox"
-                  checked={t.completed}
-                  onChange={() => toggleTask(t)}
-                />
+        {filtered.map((task) => (
+          <div className="task" key={task._id}>
+            <input
+              type="checkbox"
+              checked={task.completed}
+              onChange={() => toggleTask(task)}
+            />
 
-                <span className={t.completed ? "done" : ""}>
-                  {t.title} ({t.priority})
-                </span>
-              </div>
+            <span
+              style={{
+                textDecoration: task.completed ? "line-through" : "none",
+              }}
+            >
+              {task.title}
+            </span>
 
-              <div className="right">
-                <button onClick={() => editTask(t)}>✏️</button>
-                <button onClick={() => deleteTask(t._id)}>❌</button>
-              </div>
-            </div>
-          ))}
-        </div>
+            <span
+              style={{
+                color:
+                  task.priority === "high"
+                    ? "red"
+                    : task.priority === "medium"
+                    ? "orange"
+                    : "lightgreen",
+              }}
+            >
+              {task.priority}
+            </span>
 
+            <span>
+              {task.dueDate ? task.dueDate.split("T")[0] : ""}
+            </span>
+
+            <button
+              onClick={() => handleEdit(task)}
+              style={{ background: "#22c55e", marginRight: "5px" }}
+            >
+              Edit
+            </button>
+
+            <button onClick={() => deleteTask(task._id)}>X</button>
+          </div>
+        ))}
       </div>
+
+      {/* 🔥 TOAST */}
+      <ToastContainer position="top-right" autoClose={2000} />
     </div>
   );
 }

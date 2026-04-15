@@ -1,30 +1,32 @@
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
 
 const app = express();
 
-// Middleware
+// ✅ MIDDLEWARE
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// ✅ ROUTES (ONLY TASKS - SAFE)
 const taskRoutes = require("./routes/taskRoutes");
 app.use("/api/tasks", taskRoutes);
 
-// MongoDB Connect
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB Connected ✅"))
-.catch((err) => console.log(err));
+// ❌ AUTH ROUTES ABHI MAT LAGA (baad me karenge)
+// const authRoutes = require("./routes/authRoutes");
+// app.use("/api/auth", authRoutes);
 
-// Root test
-app.get("/", (req, res) => {
-  res.send("API Running 🚀");
-});
+// ✅ DB CONNECT
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.log("❌ DB Error:", err));
 
-// Start server
+// ✅ SERVER START
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} 🚀`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

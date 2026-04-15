@@ -1,47 +1,61 @@
 const Task = require("../models/Task");
 
-// GET ALL
+// ✅ GET ALL TASKS
 exports.getTasks = async (req, res) => {
-  const tasks = await Task.find();
-  res.json(tasks);
+  try {
+    const tasks = await Task.find().sort({ createdAt: -1 });
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// ADD TASK
-exports.createTask = async (req, res) => {
+// ✅ ADD TASK
+exports.addTask = async (req, res) => {
   try {
-    const { title, priority } = req.body;
+    const { title, priority, dueDate } = req.body;
 
-    const task = new Task({
+    const newTask = new Task({
       title,
-      priority: priority || "Medium"
+      priority,
+      dueDate,
+      completed: false,
     });
 
-    await task.save();
-    res.json(task);
+    const saved = await newTask.save();
+    res.json(saved);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// UPDATE (toggle / edit)
+// ✅ UPDATE TASK
 exports.updateTask = async (req, res) => {
   try {
-    const updated = await Task.findByIdAndUpdate(
+    const { title, priority, dueDate, completed } = req.body;
+
+    const updatedTask = await Task.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      {
+        title,
+        priority,
+        dueDate,
+        completed,
+      },
       { new: true }
     );
-    res.json(updated);
+
+    res.json(updatedTask);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// DELETE
+// ✅ DELETE TASK
 exports.deleteTask = async (req, res) => {
   try {
     await Task.findByIdAndDelete(req.params.id);
-    res.json({ msg: "Deleted" });
+    res.json({ message: "Deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

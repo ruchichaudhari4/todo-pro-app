@@ -1,99 +1,94 @@
 body {
   margin: 0;
-  font-family: "Poppins", sans-serif;
-}
-
-.app {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to right, #0f172a, #1e293b);
   height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  transition: 0.3s;
-}
-
-.app.dark {
-  background: #0f172a;
 }
 
 .container {
-  width: 400px;
-  padding: 25px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(15px);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-  animation: fadeIn 0.6s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.card {
+  background: #1e293b;
+  padding: 30px;
+  border-radius: 15px;
+  width: 450px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  color: white;
+  text-align: center;
 }
 
 h1 {
-  color: white;
+  margin-bottom: 20px;
 }
 
-.theme-btn {
-  background: #ff7b7b;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.input-section {
+.inputBox {
   display: flex;
   gap: 10px;
-  margin-top: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.input-section input,
-.search {
-  flex: 1;
+.inputBox input,
+.inputBox select {
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
 }
 
-.input-section select {
-  padding: 10px;
-  border-radius: 10px;
+.inputBox input[type="text"] {
+  flex: 1;
+  min-width: 120px;
 }
 
-.input-section button {
+.inputBox input[type="date"] {
+  width: 140px;
+}
+
+.inputBox select {
+  width: 100px;
+}
+
+.inputBox button {
   background: #ff6b6b;
   border: none;
-  color: white;
   padding: 10px 15px;
-  border-radius: 10px;
+  border-radius: 8px;
+  color: white;
   cursor: pointer;
+  transition: 0.3s;
+}
+
+.inputBox button:hover {
+  background: #ff4b4b;
 }
 
 .search {
-  margin-top: 15px;
-}
-
-.stats {
-  margin-top: 10px;
-  color: white;
-}
-
-.tasks {
-  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 10px;
 }
 
 .task {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
+  background: #334155;
+  padding: 10px;
+  border-radius: 10px;
   margin-top: 10px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.15);
-  animation: slideUp 0.3s ease;
+}
+
+.task span {
+  flex: 1;
+  text-align: center;
 }
 
 .task button {
@@ -101,21 +96,6 @@ h1 {
   border: none;
   color: white;
   padding: 5px 10px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-}
-
-.done {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9);}
-  to { opacity: 1; transform: scale(1);}
-}
-
-@keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0;}
-  to { transform: translateY(0); opacity: 1;}
 }
