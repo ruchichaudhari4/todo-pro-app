@@ -5,58 +5,66 @@ exports.getTasks = async (req, res) => {
   try {
     const tasks = await Task.find().sort({ createdAt: -1 });
     res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    console.log("GET ERROR:", error);
+    res.status(500).json({ message: "Error fetching tasks" });
   }
 };
 
-// ✅ ADD TASK
-exports.addTask = async (req, res) => {
+// ✅ CREATE TASK
+exports.createTask = async (req, res) => {
   try {
-    const { title, priority, dueDate } = req.body;
+    const { text, priority, date } = req.body;
+
+    // validation
+    if (!text) {
+      return res.status(400).json({ message: "Task text required" });
+    }
 
     const newTask = new Task({
-      title,
+      text,
       priority,
-      dueDate,
+      date,
       completed: false,
     });
 
-    const saved = await newTask.save();
-    res.json(saved);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    const savedTask = await newTask.save();
 
-// ✅ UPDATE TASK
-exports.updateTask = async (req, res) => {
-  try {
-    const { title, priority, dueDate, completed } = req.body;
-
-    const updatedTask = await Task.findByIdAndUpdate(
-      req.params.id,
-      {
-        title,
-        priority,
-        dueDate,
-        completed,
-      },
-      { new: true }
-    );
-
-    res.json(updatedTask);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(201).json(savedTask);
+  } catch (error) {
+    console.log("CREATE ERROR:", error);
+    res.status(500).json({ message: "Error creating task" });
   }
 };
 
 // ✅ DELETE TASK
 exports.deleteTask = async (req, res) => {
   try {
-    await Task.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { id } = req.params;
+
+    await Task.findByIdAndDelete(id);
+
+    res.json({ message: "Task deleted" });
+  } catch (error) {
+    console.log("DELETE ERROR:", error);
+    res.status(500).json({ message: "Error deleting task" });
+  }
+};
+
+// ✅ UPDATE TASK (checkbox + edit)
+exports.updateTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      req.body,
+      { new: true }
+    );
+
+    res.json(updatedTask);
+  } catch (error) {
+    console.log("UPDATE ERROR:", error);
+    res.status(500).json({ message: "Error updating task" });
   }
 };

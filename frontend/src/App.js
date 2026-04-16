@@ -1,20 +1,24 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
-
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import toast, { Toaster } from "react-hot-toast";
 
 function App() {
   const [tasks, setTasks] = useState([]);
-  const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
+  const [priority, setPriority] = useState("Medium");
+  const [date, setDate] = useState("");
   const [search, setSearch] = useState("");
-  const [priority, setPriority] = useState("low");
-  const [dueDate, setDueDate] = useState("");
+  const [theme, setTheme] = useState("dark");
+
   const [editId, setEditId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [editPriority, setEditPriority] = useState("Medium");
+  const [editDate, setEditDate] = useState("");
 
   const API = "http://localhost:5000/api/tasks";
 
+  // FETCH
   const fetchTasks = async () => {
     const res = await axios.get(API);
     setTasks(res.data);
@@ -24,161 +28,197 @@ function App() {
     fetchTasks();
   }, []);
 
-  // ADD / UPDATE
-  const handleSubmit = async () => {
-    if (!title.trim()) {
-      toast.error("Task cannot be empty ❌");
-      return;
-    }
+  // ADD
+  const addTask = async () => {
+    if (!text.trim()) return toast.error("Enter task");
 
-    if (editId) {
-      const oldTask = tasks.find((t) => t._id === editId);
+    await axios.post(API, { text, priority, date });
+    toast.success("Task added");
 
-      await axios.put(`${API}/${editId}`, {
-        title,
-        priority,
-        dueDate,
-        completed: oldTask.completed,
-      });
-
-      toast.success("Task Updated ✏️");
-      setEditId(null);
-    } else {
-      await axios.post(API, {
-        title,
-        priority,
-        dueDate,
-      });
-
-      toast.success("Task Added ✅");
-    }
-
-    setTitle("");
-    setPriority("low");
-    setDueDate("");
-
+    setText("");
+    setDate("");
     fetchTasks();
   };
 
   // DELETE
   const deleteTask = async (id) => {
     await axios.delete(`${API}/${id}`);
-    toast.info("Task Deleted 🗑️");
+    toast.success("Task deleted");
     fetchTasks();
   };
 
   // TOGGLE
-  const toggleTask = async (task) => {
-    await axios.put(`${API}/${task._id}`, {
-      ...task,
-      completed: !task.completed,
-    });
-
-    toast("Task status changed 🔄");
+  const toggleTask = async (id, completed) => {
+    await axios.put(`${API}/${id}`, { completed: !completed });
     fetchTasks();
   };
 
-  // EDIT
-  const handleEdit = (task) => {
-    setTitle(task.title);
-    setPriority(task.priority);
-    setDueDate(task.dueDate ? task.dueDate.split("T")[0] : "");
+  // OPEN EDIT
+  const openEdit = (task) => {
     setEditId(task._id);
+    setEditText(task.text);
+    setEditPriority(task.priority);
+    setEditDate(task.date || "");
   };
 
-  const filtered = tasks.filter((t) =>
-    t.title?.toLowerCase().includes(search.toLowerCase())
+  // SAVE EDIT
+  const saveEdit = async () => {
+    await axios.put(`${API}/${editId}`, {
+      text: editText,
+      priority: editPriority,
+      date: editDate,
+    });
+
+    toast.success("Task updated");
+    setEditId(null);
+    fetchTasks();
+  };
+
+  // FILTER
+  const filteredTasks = tasks.filter((t) =>
+    t.text?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="container">
-      <div className="card">
-        <h1>🚀 Todo Pro</h1>
+    <div className={`container ${theme}`}>
+      <Toaster />
 
-        <div className="inputBox">
+      <div className="card">
+        {/* HEADER */}
+        <div className="header">
+          <h1>🚀 Todo Pro</h1>
+          <button
+            className="theme-btn"
+            onClick={() =>
+              setTheme(theme === "dark" ? "light" : "dark")
+            }
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+        </div>
+
+        {/* INPUT */}
+        <div className="input-row">
           <input
-            type="text"
+            className="task-input"
             placeholder="Enter task..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
           />
 
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
           >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
           </select>
 
           <input
             type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+            className="date-input"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
           />
 
-          <button onClick={handleSubmit}>
-            {editId ? "Update" : "Add"}
+          <button className="add-btn" onClick={addTask}>
+            Add
           </button>
         </div>
 
+        {/* SEARCH */}
         <input
           className="search"
-          placeholder="Search..."
+          placeholder="Search task..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <p>Total: {filtered.length}</p>
+        {/* STATS */}
+        <p className="stats">
+          Total: {filteredTasks.length} | Completed:{" "}
+          {filteredTasks.filter((t) => t.completed).length}
+        </p>
 
-        {filtered.map((task) => (
-          <div className="task" key={task._id}>
-            <input
-              type="checkbox"
-              checked={task.completed}
-              onChange={() => toggleTask(task)}
-            />
-
-            <span
-              style={{
-                textDecoration: task.completed ? "line-through" : "none",
-              }}
+        {/* TASKS */}
+        {filteredTasks.length === 0 ? (
+          <p>No tasks</p>
+        ) : (
+          filteredTasks.map((task) => (
+            <div
+              key={task._id}
+              className={`task ${task.completed ? "completed" : ""}`}
             >
-              {task.title}
-            </span>
+              <div className="task-left">
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() =>
+                    toggleTask(task._id, task.completed)
+                  }
+                />
+                <span>{task.text}</span>
+              </div>
 
-            <span
-              style={{
-                color:
-                  task.priority === "high"
-                    ? "red"
-                    : task.priority === "medium"
-                    ? "orange"
-                    : "lightgreen",
-              }}
-            >
-              {task.priority}
-            </span>
+              <span className={task.priority.toLowerCase()}>
+                {task.priority}
+              </span>
 
-            <span>
-              {task.dueDate ? task.dueDate.split("T")[0] : ""}
-            </span>
+              <span>{task.date || "-"}</span>
 
-            <button
-              onClick={() => handleEdit(task)}
-              style={{ background: "#22c55e", marginRight: "5px" }}
-            >
-              Edit
-            </button>
-
-            <button onClick={() => deleteTask(task._id)}>X</button>
-          </div>
-        ))}
+              <div>
+                <button
+                  className="edit-btn"
+                  onClick={() => openEdit(task)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => deleteTask(task._id)}
+                >
+                  X
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* 🔥 TOAST */}
-      <ToastContainer position="top-right" autoClose={2000} />
+      {/* EDIT MODAL */}
+      {editId && (
+        <div className="modal">
+          <div className="modal-box">
+            <h3>Edit Task</h3>
+
+            <input
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+            />
+
+            <select
+              value={editPriority}
+              onChange={(e) => setEditPriority(e.target.value)}
+            >
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+            </select>
+
+            <input
+              type="date"
+              value={editDate}
+              onChange={(e) => setEditDate(e.target.value)}
+            />
+
+            <div style={{ marginTop: "10px" }}>
+              <button onClick={saveEdit}>Save</button>
+              <button onClick={() => setEditId(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
