@@ -144,7 +144,7 @@ DELETE	/api/tasks/:id	Delete task
 📱 Mobile App Version
 👨‍💻 Author
 
-Rahul Ghanchi
+Himani Chuadhari
 
 ⭐ Support
 
